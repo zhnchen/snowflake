@@ -133,13 +133,12 @@ func NewNode(node int64) (*Node, error) {
 // - Make sure your system is keeping accurate system time
 // - Make sure you never have multiple nodes running with the same node ID
 func (n *Node) Generate() ID {
-
 	n.mu.Lock()
 
 	now := time.Since(n.epoch).Milliseconds()
 
 	if now == n.time {
-		n.step = (n.step + 1) & n.stepMask
+		n.step = (n.step + 2) & n.stepMask
 
 		if n.step == 0 {
 			for now <= n.time {
@@ -159,6 +158,17 @@ func (n *Node) Generate() ID {
 
 	n.mu.Unlock()
 	return r
+}
+
+// GenerateWithDelay creates a specific feed id in the past with a given delay
+func (n *Node) GenerateWithDelay(delay int) ID {
+	// Generate a Go Datetime which is a value at a specific date/time
+	dateTime := time.Now().Add(time.Second * time.Duration(-delay))
+	// Convert it into Unix timestamp in milliseconds and offset it by the snowflake Epoch
+	t := dateTime.Sub(n.epoch).Nanoseconds() / 1000000
+	//t := dateTime.UnixNano()/1000000 - n.epoch
+	t = (t << (NodeBits + StepBits)) | (n.node << n.nodeShift)
+	return ID(t)
 }
 
 // Int64 returns an int64 of the snowflake ID

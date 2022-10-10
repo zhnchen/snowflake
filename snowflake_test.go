@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+	"time"
 )
 
 //******************************************************************************
@@ -36,6 +37,24 @@ func TestGenerateDuplicateID(t *testing.T) {
 			t.Errorf("x(%d) & y(%d) are the same", x, y)
 		}
 		x = y
+	}
+}
+
+func TestGenerateWithDelay(t *testing.T) {
+	node, _ := NewNode(1)
+
+	past := node.Generate().Int64()
+	t.Logf("past    : %v", past)
+
+	elapse := 2
+	time.Sleep(time.Duration(elapse) * time.Second)
+	now := node.Generate().Int64()
+	t.Logf("now    : %v", now)
+
+	pastDelay := node.GenerateWithDelay(elapse - 1).Int64()
+	t.Logf("pastDelay    : %v", pastDelay)
+	if pastDelay > now || pastDelay < past {
+		t.Fatal("past snowflake id generation is invalid")
 	}
 }
 
